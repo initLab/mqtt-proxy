@@ -8,6 +8,10 @@
 		"topics": [
 			"example/+",
 			"example2/+"
+		],
+		"values": [
+			"example/test",
+			"example2/test",
 		]
 	}
 }
