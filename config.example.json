@@ -1,0 +1,13 @@
+{
+	"listen": {
+		"hostname": "0.0.0.0",
+		"port": 1234
+	},
+	"mqtt": {
+		"url": "mqtt://0.0.0.0",
+		"topics": [
+			"example/+",
+			"example2/+"
+		]
+	}
+}
