@@ -40,6 +40,9 @@ function logger() {
 
 const collectdSocket = net.connect(config.collectd.socket, function() {
 	logger('collectd socket connected');
+	collectdSocket.on('data', function(data) {
+		logger('collectd socket received', data.toString());
+	});
 });
 
 const mqttClient = mqtt.connect(config.mqtt.url);
@@ -74,14 +77,15 @@ mqttClient.on('message', function(topic, message, packet) {
 	const collectdPluginInstance = topicParts[0].replace(/\-/g, '_');
 	const key = topicParts[1];
 
-	collectdSocket.write(
-		'PUTVAL "' +
+	const collectdCommand = 'PUTVAL "' +
 		config.collectd.host + '/' +
 		config.collectd.plugin + '-' +
 		collectdPluginInstance + '/' +
 		key + '" N:' +
-		value + '\n'
-	);
+		value;
+
+	collectdSocket.write(collectdCommand + '\n');
+	logger('collectd socket sent', collectdCommand);
 });
 
 dispatcher.onGet('/status', function(req, res) {
