@@ -55,7 +55,10 @@ mqttClient.on('message', function(topic, message) {
 	}
 	
 	const value = message.toString();
-	status[topic] = value;
+	status[topic] = {
+		timestamp: Date.now(),
+		value: value
+	};
 	logger('[' + topic + '] ' + value);
 });
 
