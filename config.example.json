@@ -13,5 +13,12 @@
 			"example/test",
 			"example2/test",
 		]
+	},
+	"collectd": {
+		"socket": {
+			"path": "/var/run/example.sock"
+		},
+		"host": "host-name",
+		"plugin": "plugin-name"
 	}
 }
