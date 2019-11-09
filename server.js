@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-
+const net = require('net');
 const http = require('http');
 const dispatcher = require('httpdispatcher');
 const URL = require('url');
@@ -38,7 +38,11 @@ function logger() {
 	console.log.apply(console, args);
 }
 
-let mqttClient = mqtt.connect(config.mqtt.url);
+const collectdSocket = net.connect(config.collectd.socket, function() {
+	logger('collectd socket connected');
+});
+
+const mqttClient = mqtt.connect(config.mqtt.url);
 
 mqttClient.on('connect', function() {
 	logger('mqtt connected');
@@ -49,17 +53,35 @@ mqttClient.on('connect', function() {
 	});
 });
 
-mqttClient.on('message', function(topic, message) {
+mqttClient.on('message', function(topic, message, packet) {
+	if (packet.retain) {
+		return;
+	}
+
 	if (!config.mqtt.values.includes(topic)) {
 		return;
 	}
 	
 	const value = message.toString();
+	logger('[' + topic + '] ' + value);
+
 	status[topic] = {
 		timestamp: Date.now(),
 		value: value
 	};
-	logger('[' + topic + '] ' + value);
+
+	const topicParts = topic.split('/', 2);
+	const collectdPluginInstance = topicParts[0].replace(/\-/g, '_');
+	const key = topicParts[1];
+
+	collectdSocket.write(
+		'PUTVAL "' +
+		config.collectd.host + '/' +
+		config.collectd.plugin + '-' +
+		collectdPluginInstance + '/' +
+		key + '" N:' +
+		value + '\n'
+	);
 });
 
 dispatcher.onGet('/status', function(req, res) {
