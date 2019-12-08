@@ -38,12 +38,16 @@ function logger() {
 	console.log.apply(console, args);
 }
 
-const collectdSocket = net.connect(config.collectd.socket, function() {
-	logger('collectd socket connected');
-	collectdSocket.on('data', function(data) {
-		logger('collectd socket received', data.toString());
+let collectdSocket;
+
+if (config.collectd) {
+	collectdSocket = net.connect(config.collectd.socket, function() {
+		logger('collectd socket connected');
+		collectdSocket.on('data', function(data) {
+			logger('collectd socket received', data.toString());
+		});
 	});
-});
+}
 
 const mqttClient = mqtt.connect(config.mqtt.url);
 
@@ -73,19 +77,22 @@ mqttClient.on('message', function(topic, message, packet) {
 		value: value
 	};
 
-	const topicParts = topic.split('/', 2);
-	const collectdPluginInstance = topicParts[0].replace(/\-/g, '_');
-	const key = topicParts[1];
+	if (collectdSocket) {
+		const topicParts = topic.split('/', 2);
+		const collectdPluginInstance = topicParts[0].replace(/\-/g, '_');
+		const key = topicParts[1];
 
-	const collectdCommand = 'PUTVAL "' +
-		config.collectd.host + '/' +
-		config.collectd.plugin + '-' +
-		collectdPluginInstance + '/' +
-		key + '" N:' +
-		value;
+		const collectdCommand = 'PUTVAL "' +
+			config.collectd.host + '/' +
+			config.collectd.plugin + '-' +
+			collectdPluginInstance + '/' +
+			key + '" N:' +
+			value;
 
-	collectdSocket.write(collectdCommand + '\n');
-	logger('collectd socket sent', collectdCommand);
+		collectdSocket.write(collectdCommand + '\n');
+	
+		logger('collectd socket sent', collectdCommand);
+	}
 });
 
 dispatcher.onGet('/status', function(req, res) {
