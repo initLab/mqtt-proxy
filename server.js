@@ -38,6 +38,15 @@ function logger() {
 	console.log.apply(console, args);
 }
 
+function buildCollectdCommand(host, plugin, pluginInstance, type, value) {
+	return 'PUTVAL "' +
+		host + '/' +
+		plugin + '-' +
+		pluginInstance + '/' +
+		type + '" N:' +
+		value;
+}
+
 let collectdSocket;
 
 if (config.collectd) {
@@ -77,22 +86,28 @@ mqttClient.on('message', function(topic, message, packet) {
 		value: value
 	};
 
-	if (collectdSocket) {
-		const topicParts = topic.split('/', 2);
-		const collectdPluginInstance = topicParts[0].replace(/\-/g, '_').replace(/\//g, '~');
-		const key = topicParts[1];
-
-		const collectdCommand = 'PUTVAL "' +
-			config.collectd.host + '/' +
-			config.collectd.plugin + '-' +
-			collectdPluginInstance + '/' +
-			key + '" N:' +
-			value;
-
-		collectdSocket.write(collectdCommand + '\n');
+	let topicParts = topic.split('/');
+	const collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
 	
-		logger('collectd socket sent', collectdCommand);
+	if (topicParts[0] === 'relay') {
+		topicParts[0] = 'state';
 	}
+	
+	const type = topicParts.join('-');
+
+	const collectdCommand = buildCollectdCommand(
+		collectdSocket ? config.collectd.host : 'localhost',
+		collectdSocket ? config.collectd.plugin : 'my_plugin',
+		collectdPluginInstance,
+		type,
+		value
+	);
+
+	if (collectdSocket) {
+		collectdSocket.write(collectdCommand + '\n');
+	}
+
+	logger('collectd socket sent', collectdCommand);
 });
 
 dispatcher.onGet('/status', function(req, res) {
