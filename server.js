@@ -79,7 +79,7 @@ mqttClient.on('message', function(topic, message, packet) {
 
 	if (collectdSocket) {
 		const topicParts = topic.split('/', 2);
-		const collectdPluginInstance = topicParts[0].replace(/\-/g, '_');
+		const collectdPluginInstance = topicParts[0].replace(/\-/g, '_').replace(/\//g, '~');
 		const key = topicParts[1];
 
 		const collectdCommand = 'PUTVAL "' +
