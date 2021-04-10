@@ -88,12 +88,15 @@ mqttClient.on('message', function(topic, message, packet) {
 
 	let topicParts = topic.split('/');
 	const collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
+	let type;
 	
 	if (topicParts[0] === 'relay') {
 		topicParts[0] = 'state';
+		type = topicParts.join('-');
 	}
-	
-	const type = topicParts.join('-');
+	else {
+		type = topicParts.pop();
+	}
 
 	const collectdCommand = buildCollectdCommand(
 		collectdSocket ? config.collectd.host : 'localhost',
