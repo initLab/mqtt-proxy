@@ -87,7 +87,7 @@ mqttClient.on('message', function(topic, message, packet) {
 	};
 
 	let topicParts = topic.split('/');
-	const collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
+	let collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
 	let type;
 	
 	if (topicParts[0] === 'relay') {
@@ -95,6 +95,7 @@ mqttClient.on('message', function(topic, message, packet) {
 		type = topicParts.join('-');
 	}
 	else {
+		collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
 		type = topicParts.pop();
 	}
 
