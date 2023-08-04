@@ -78,12 +78,26 @@ mqttClient.on('message', function(topic, message, packet) {
 		return;
 	}
 
-	const value = message.toString();
-	logger('[' + topic + '] ' + value);
+	const messageStr = message.toString();
+	logger('[' + topic + '] ' + messageStr);
+
+	let timestamp, value;
+
+	try {
+		({
+			timestamp,
+			value,
+		} = JSON.parse(messageStr));
+	}
+	catch {
+		// backwards compatibility
+		timestamp = Date.now();
+		value = messageStr;
+	}
 
 	status[topic] = {
-		timestamp: Date.now(),
-		value: value
+		timestamp,
+		value,
 	};
 
 	let topicParts = topic.split('/');
