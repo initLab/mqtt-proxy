@@ -1,11 +1,11 @@
+// noinspection HttpUrlsUsage
+
 'use strict';
 
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
 const dispatcher = require('httpdispatcher');
-const URL = require('url');
-const QS = require('querystring');
 const mqtt = require('mqtt');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
@@ -16,14 +16,14 @@ function leadingZero(num) {
 	if (num > 9) {
 		return num;
 	}
-	
+
 	return '0' + num;
 }
 
 function logger() {
 	const dt = new Date;
 	const args = Array.prototype.slice.apply(arguments);
-	
+
 	args.unshift(
 		'[' +
 		leadingZero(dt.getDate()) + '.' +
@@ -34,7 +34,7 @@ function logger() {
 		leadingZero(dt.getSeconds()) +
 		']'
 	);
-	
+
 	console.log.apply(console, args);
 }
 
@@ -62,7 +62,7 @@ const mqttClient = mqtt.connect(config.mqtt.url);
 
 mqttClient.on('connect', function() {
 	logger('mqtt connected');
-	
+
 	config.mqtt.topics.forEach(function(topic) {
 		logger('subscribing to ' + topic);
 		mqttClient.subscribe(topic);
@@ -77,7 +77,7 @@ mqttClient.on('message', function(topic, message, packet) {
 	if (!config.mqtt.values.includes(topic)) {
 		return;
 	}
-	
+
 	const value = message.toString();
 	logger('[' + topic + '] ' + value);
 
@@ -87,15 +87,15 @@ mqttClient.on('message', function(topic, message, packet) {
 	};
 
 	let topicParts = topic.split('/');
-	let collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
+	let collectdPluginInstance = topicParts.shift().replace(/-/g, '_');
 	let type;
-	
+
 	if (topicParts[0] === 'relay') {
 		topicParts[0] = 'state';
 		type = topicParts.join('-');
 	}
 	else {
-		collectdPluginInstance = topicParts.shift().replace(/\-/g, '_');
+		collectdPluginInstance = topicParts.shift().replace(/-/g, '_');
 		type = topicParts.pop();
 	}
 
@@ -124,10 +124,10 @@ dispatcher.onGet('/status', function(req, res) {
 
 http.createServer(function(req, res) {
 	const conn = req.connection;
-	
+
 	logger('HTTP client connected: ' + conn.remoteAddress + ':' + conn.remotePort);
 	logger(req.method + ' ' + req.url);
-	
+
 	try {
 		dispatcher.dispatch(req, res);
 	}
