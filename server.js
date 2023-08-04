@@ -70,10 +70,6 @@ mqttClient.on('connect', function() {
 });
 
 mqttClient.on('message', function(topic, message, packet) {
-	if (packet.retain) {
-		return;
-	}
-
 	if (!config.mqtt.values.includes(topic)) {
 		return;
 	}
@@ -90,6 +86,10 @@ mqttClient.on('message', function(topic, message, packet) {
 		} = JSON.parse(messageStr));
 	}
 	catch {
+		if (packet.retain) {
+			return;
+		}
+
 		// backwards compatibility
 		timestamp = Date.now();
 		value = messageStr;
