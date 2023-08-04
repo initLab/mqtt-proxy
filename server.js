@@ -38,12 +38,13 @@ function logger() {
 	console.log.apply(console, args);
 }
 
-function buildCollectdCommand(host, plugin, pluginInstance, type, value) {
+function buildCollectdCommand(host, plugin, pluginInstance, type, value, timestamp = 'N') {
 	return 'PUTVAL "' +
 		host + '/' +
 		plugin + '-' +
 		pluginInstance + '/' +
-		type + '" N:' +
+		type + '" ' +
+		timestamp + ':' +
 		value;
 }
 
@@ -77,16 +78,19 @@ mqttClient.on('message', function(topic, message, packet) {
 	const messageStr = message.toString();
 	logger('[' + topic + '] ' + messageStr);
 
-	let timestamp, value;
+	let timestamp, value, collectTimestamp;
 
 	try {
 		({
 			timestamp,
 			value,
 		} = JSON.parse(messageStr));
+
+		collectTimestamp = Math.round(timestamp / 1000);
 	}
 	catch {
 		if (packet.retain) {
+			logger('Skipping retained packet without timestamp');
 			return;
 		}
 
@@ -118,7 +122,8 @@ mqttClient.on('message', function(topic, message, packet) {
 		collectdSocket ? config.collectd.plugin : 'my_plugin',
 		collectdPluginInstance,
 		type,
-		value
+		value,
+		collectTimestamp,
 	);
 
 	if (collectdSocket) {
