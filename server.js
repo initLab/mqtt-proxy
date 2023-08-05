@@ -39,13 +39,7 @@ function logger() {
 }
 
 function buildCollectdCommand(host, plugin, pluginInstance, type, value, timestamp = 'N') {
-	return 'PUTVAL "' +
-		host + '/' +
-		plugin + '-' +
-		pluginInstance + '/' +
-		type + '" ' +
-		timestamp + ':' +
-		value;
+	return `PUTVAL "${host}/${plugin}-${pluginInstance}/${type}" ${timestamp}:${value}`;
 }
 
 let collectdSocket;
@@ -70,6 +64,31 @@ mqttClient.on('connect', function() {
 	});
 });
 
+function parseValue(messageStr, packet) {
+	try {
+		const decoded = JSON.parse(messageStr);
+
+		if (typeof decoded.timestamp !== 'undefined' && typeof decoded.value !== 'undefined') {
+			return decoded;
+		}
+
+		// incorrect JSON contents
+	}
+	catch {
+		// not JSON
+	}
+
+	if (packet.retain) {
+		logger('Skipping retained packet without timestamp');
+		return false;
+	}
+
+	// backwards compatibility
+	return {
+		value: messageStr,
+	};
+}
+
 mqttClient.on('message', function(topic, message, packet) {
 	if (!config.mqtt.values.includes(topic)) {
 		return;
@@ -78,25 +97,24 @@ mqttClient.on('message', function(topic, message, packet) {
 	const messageStr = message.toString();
 	logger('[' + topic + '] ' + messageStr);
 
-	let timestamp, value, collectTimestamp;
+	const parsed = parseValue(messageStr, packet);
 
-	try {
-		({
-			timestamp,
-			value,
-		} = JSON.parse(messageStr));
-
-		collectTimestamp = Math.round(timestamp / 1000);
+	if (parsed === false) {
+		return;
 	}
-	catch {
-		if (packet.retain) {
-			logger('Skipping retained packet without timestamp');
-			return;
-		}
 
-		// backwards compatibility
+	let {
+		timestamp,
+		value,
+	} = parsed;
+
+	let collectTimestamp;
+
+	if (typeof timestamp === 'undefined') {
 		timestamp = Date.now();
-		value = messageStr;
+	}
+	else {
+		collectTimestamp = Math.round(timestamp / 1000);
 	}
 
 	status[topic] = {
