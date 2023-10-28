@@ -153,7 +153,8 @@ mqttClient.on('message', function(topic, message, packet) {
 
 dispatcher.onGet('/status', function(req, res) {
 	res.writeHead(200, {
-		'Content-Type': 'application/json'
+		'Content-Type': 'application/json',
+		'Access-Control-Allow-Origin': '*',
     });
 
 	res.end(JSON.stringify(status));
