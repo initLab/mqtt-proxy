@@ -83,9 +83,11 @@ function parseValue(messageStr, packet) {
 		return false;
 	}
 
+	const value = isFinite(messageStr) ? parseFloat(messageStr) : messageStr;
+
 	// backwards compatibility
 	return {
-		value: messageStr,
+		value,
 	};
 }
 
