@@ -5,12 +5,14 @@
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
-const dispatcher = require('httpdispatcher');
+const HttpDispatcher = require('httpdispatcher');
 const mqtt = require('mqtt');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 let status = {};
+
+const dispatcher = new HttpDispatcher();
 
 function leadingZero(num) {
 	if (num > 9) {

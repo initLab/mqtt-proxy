@@ -9,7 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "httpdispatcher": "^1.0.0",
+    "httpdispatcher": "^2.2.0",
     "mqtt": "^3.0.0"
   }
 }
