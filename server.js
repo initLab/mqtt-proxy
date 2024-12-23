@@ -74,6 +74,13 @@ function parseValue(messageStr, packet) {
 			return decoded;
 		}
 
+		// yasp passthrough
+		if (typeof decoded.value === 'object' && typeof decoded.value.real === 'string') {
+			return {
+				value: parseFloat(decoded.value.real.replace(/C$/, '')),
+			};
+		}
+
 		// incorrect JSON contents
 	}
 	catch {
